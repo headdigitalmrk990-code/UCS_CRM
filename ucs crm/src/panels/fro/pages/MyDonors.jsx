@@ -139,7 +139,7 @@ export default function MyDonors() {
     <div className="detail-card" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div className="detail-split" style={{ flex: 1, minHeight: 0 }}>
         {/* LEFT PANEL — merged profile + details */}
-        <div className="detail-left" style={{ padding: 16 }}>
+        <div className="detail-left" style={{ padding: 12 }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {/* Profile header */}
             <div style={{ textAlign: 'center', paddingBottom: 12, borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
@@ -234,7 +234,7 @@ export default function MyDonors() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="detail-right" style={{ padding: '16px 16px 16px 0' }}>
+        <div className="detail-right" style={{ padding: '12px 12px 12px 0' }}>
           {message && (
             <div className={`detail-message ${message.type}`}>
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{message.type === 'error' ? 'error' : 'check_circle'}</span>
@@ -327,7 +327,7 @@ export default function MyDonors() {
           </div>
 
           {/* Action Bar */}
-          <div className="detail-action-bar">
+          <div className="detail-action-outer">
             <span className="counter">{index + 1} of {donors.length}</span>
             <button className="btn-prev" disabled={index === 0} onClick={() => setIndex(i => i - 1)}>← Prev</button>
             <button className="btn-next"
