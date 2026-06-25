@@ -1,1 +1,0 @@
-ALTER TABLE workers ADD COLUMN IF NOT EXISTS light_bill_url TEXT;

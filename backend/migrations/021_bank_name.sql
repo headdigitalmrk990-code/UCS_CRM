@@ -1,1 +1,0 @@
-ALTER TABLE workers ADD COLUMN IF NOT EXISTS bank_name TEXT;

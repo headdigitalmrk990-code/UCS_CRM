@@ -1,1 +1,0 @@
-ALTER TABLE worker_family ADD COLUMN IF NOT EXISTS dob DATE;
