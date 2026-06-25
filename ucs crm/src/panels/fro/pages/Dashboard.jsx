@@ -105,12 +105,17 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <div className="bento-col-3">
-        <div className="bento-card" style={{ cursor:'pointer' }} onClick={() => setShowRequest(true)}>
-          <div className="m3-stat">
-            <div className="m3-stat-num" style={{ fontSize:20, color:'var(--sage)' }}>+ Request</div>
-            <div className="m3-stat-lbl">More Data</div>
+      <div className="bento-col-12">
+        <div className="bento-card" style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', padding:'12px 16px' }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700 }}>Need more donor data?</div>
+            <div style={{ fontSize:10, color:'var(--md-outline)', marginTop:2 }}>Request additional assignments or data from the NGO admin.</div>
           </div>
+          <button onClick={() => setShowRequest(true)}
+            style={{ padding:'8px 20px', border:'none', borderRadius:8, background:'var(--sage)', color:'#fff', fontSize:11, fontWeight:700, fontFamily:'inherit', cursor:'pointer', display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap' }}>
+            <span className="material-symbols-outlined" style={{ fontSize:16 }}>add_circle</span>
+            Request More Data
+          </button>
         </div>
       </div>
 

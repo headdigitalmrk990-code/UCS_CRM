@@ -5,9 +5,11 @@ import Dashboard from './pages/Dashboard'
 import MyLeads from './pages/MyLeads'
 import CallLogs from './pages/CallLogs'
 import MyDonors from './pages/MyDonors'
+import Scheduled from './pages/Scheduled'
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'scheduled', label: 'Scheduled', icon: 'calendar_month' },
   { id: 'leads', label: 'Leads', icon: 'person_add' },
   { id: 'my-donors', label: 'Donors', icon: 'diversity_3' },
   { id: 'call-logs', label: 'Logs', icon: 'call_log' },
@@ -101,6 +103,8 @@ export default function FROPanel() {
         <div className="content-body">
           {active === 'dashboard' ? (
             <Dashboard />
+          ) : active === 'scheduled' ? (
+            <Scheduled />
           ) : active === 'leads' ? (
             <MyLeads />
           ) : active === 'my-donors' ? (
