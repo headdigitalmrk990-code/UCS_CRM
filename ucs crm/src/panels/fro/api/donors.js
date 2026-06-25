@@ -53,3 +53,7 @@ export async function markDonorSeen(donorId, ngoId) {
   const body = ngoId ? JSON.stringify({ ngo_id: ngoId }) : '{}'
   return api(`/fro/donors/${donorId}/mark-seen`, { method: 'PUT', body, _prefix: 'ucs' })
 }
+
+export async function reportMissedSchedule(donorId, ngoId, scheduledAt) {
+  return api('/fro/report-missed', { method: 'POST', body: JSON.stringify({ donor_id: donorId, ngo_id: ngoId, scheduled_at: scheduledAt }), _prefix: 'ucs' })
+}

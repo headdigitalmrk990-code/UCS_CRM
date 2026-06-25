@@ -57,10 +57,21 @@ export default function MyDonors() {
 
   useEffect(() => {
     setLoading(true);
-    getMyDonors(filterStatus).then(r => { setDonors(r); setMessage(null); }).catch(err => setMessage({ type: 'error', text: err.message })).finally(() => setLoading(false));
+    getMyDonors(filterStatus).then(r => {
+      setDonors(r);
+      setMessage(null);
+      const saved = sessionStorage.getItem('mydonors_index');
+      if (saved && Number(saved) < r.length) {
+        setIndex(Number(saved));
+      } else {
+        setIndex(0);
+      }
+    }).catch(err => setMessage({ type: 'error', text: err.message })).finally(() => setLoading(false));
   }, [filterStatus]);
 
-  useEffect(() => { setIndex(0); }, [donors.length]);
+  useEffect(() => {
+    sessionStorage.setItem('mydonors_index', String(index));
+  }, [index]);
 
   const donor = donors[index];
   const logs = detail?.logs || [];
@@ -161,12 +172,17 @@ export default function MyDonors() {
         logData.donor_dob = leadDob || null;
       }
       await addDonorLog(donor.id, logData);
-      setMessage({ type: 'success', text: 'Disposition logged' });
       setSelected(null); setNotes(''); setLeadScreenshot(null); setScreenshotPreview(null); setLeadAddress(''); setLeadPan(''); setLeadDob('');
-      loadDetail();
+      setIndex(i => i + 1 >= donors.length ? 0 : i + 1);
     } catch (err) {
       setMessage({ type: 'error', text: err.message });
     } finally { setSaving(false); }
+  };
+
+  const handleButtonClick = () => {
+    if (selected) { handleSave(); return; }
+    setMessage(null);
+    setIndex(i => i + 1 >= donors.length ? 0 : i + 1);
   };
 
   if (loading) return <div className="loading">Loading donors...</div>;
@@ -239,23 +255,22 @@ export default function MyDonors() {
                 </div>
               </div>
               <div className="detail-field-row">
-                <div className="fld">
-                  <label>Project</label>
-                  <div>{donor.donor_project || '—'}</div>
-                </div>
-                <div className="fld" style={{ cursor:'pointer' }} onClick={openDonationModal}>
-                  <label>Donations</label>
-                  <div style={{ color:'var(--sage)', fontWeight:600 }}>{donor.donation_count || 0} time{donor.donation_count !== 1 ? 's' : ''} (₹{Number(donor.total_donated || 0).toLocaleString('en-IN')})</div>
-                </div>
-              </div>
-              {donor.donor_address && (
-                <div className="detail-field-row">
-                  <div className="fld">
-                    <label>Address</label>
-                    <div>{donor.donor_address}</div>
+                <div className="fld" onClick={openDonationModal} style={{ cursor:'pointer' }}>
+                  <label>Donations
+                    <span style={{ fontSize:9, marginLeft:4, opacity:.5 }}>↗</span>
+                  </label>
+                  <div style={{ color:'var(--sage)', fontWeight:600, display:'flex', alignItems:'center', gap:4 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize:13, color:'var(--sage)' }}>payments</span>
+                    {donor.donation_count || 0} time{donor.donation_count !== 1 ? 's' : ''} (₹{Number(donor.total_donated || 0).toLocaleString('en-IN')})
                   </div>
                 </div>
-              )}
+              </div>
+              <div className="detail-field-row">
+                <div className="fld">
+                  <label>Address</label>
+                  <div style={{ fontStyle: detail?.donor_address ? 'normal' : 'italic', color: detail?.donor_address ? 'inherit' : 'var(--ink-soft)' }}>{detail?.donor_address || donor.donor_address || 'No address'}</div>
+                </div>
+              </div>
               {donor.donor_pan && (
                 <div className="detail-field-row">
                   <div className="fld">
@@ -438,13 +453,11 @@ export default function MyDonors() {
 
     <div className="detail-action-outer">
       <span className="counter">{index + 1} of {donors.length}</span>
-      <button className="btn-prev" disabled={index === 0} onClick={() => setIndex(i => i - 1)}>← Prev</button>
       <button className="btn-next"
         disabled={saving}
-        onClick={handleSave}>
-        {saving ? 'Saving...' : selected ? `Log ${findDisp(selected)?.label || selected}` : 'NEXT'}
+        onClick={handleButtonClick}>
+        {saving ? 'Saving...' : selected ? `Log ${findDisp(selected)?.label || selected}` : 'Next →'}
       </button>
-      <button className="btn-prev" disabled={index === donors.length - 1} onClick={() => setIndex(i => i + 1)}>Next →</button>
     </div>
 
     {/* Donation Modal */}

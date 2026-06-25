@@ -9,9 +9,11 @@ import Assignments from './pages/Assignments'
 import Accounts from './pages/Accounts'
 import StationManagement from './pages/StationManagement'
 import NewData from './pages/NewData'
+import Alerts from './pages/Alerts'
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: '\u{1F4CA}' },
+  { id: 'alerts', label: 'Alerts', icon: '\u{1F514}' },
   { id: 'donors', label: 'Donors', icon: '\u{1F465}' },
   { id: 'new-data', label: 'New Data', icon: '\u{1F4E5}' },
   { id: 'assignments', label: 'Assignments', icon: '\u{1F4CB}' },
@@ -110,6 +112,7 @@ export default function NgoAdminPanel() {
         </header>
         <div className="content-body">
           {active === 'dashboard' && <Dashboard />}
+          {active === 'alerts' && <Alerts />}
           {active === 'donors' && (selectedDonor ? (
             <DonorDetail donor={selectedDonor} onBack={() => setSelectedDonor(null)} />
           ) : (
