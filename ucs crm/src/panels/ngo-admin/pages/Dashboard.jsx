@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { apiGet } from '../api/auth';
 
 const DISPOSITION_LABELS = {
@@ -99,7 +99,7 @@ function StationDetailModal({ station, stats, stationInfo, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 640 }}>
         <div className="modal-head">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <h3 style={{ margin: 0 }}>{station}</h3>
             {stationInfo?.fro_worker_name && (
               <span style={{ fontSize: 12, color: 'var(--ink-soft)', fontWeight: 500, background: 'var(--bg)', padding: '2px 10px', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -107,6 +107,14 @@ function StationDetailModal({ station, stats, stationInfo, onClose }) {
                 {stationInfo.fro_worker_name}
               </span>
             )}
+            <span style={{ fontSize: 12, background: 'var(--sage)', color: '#fff', padding: '2px 10px', borderRadius: 12, fontWeight: 600 }}>
+              {total} donors
+            </span>
+            {stationInfo?.ngos?.map(n => (
+              <span key={n} style={{ fontSize: 11, background: '#eef2ff', color: '#6366f1', padding: '2px 8px', borderRadius: 12 }}>
+                {n}
+              </span>
+            ))}
           </div>
           <button className="btn btn-sm btn-outline" onClick={onClose}>✕</button>
         </div>
@@ -296,8 +304,6 @@ export default function Dashboard() {
     color: g.color,
   })).filter(d => d.value > 0);
 
-  const barData = stationNames.map(s => ({ name: s, total: getStationTotal(s) })).sort((a, b) => b.total - a.total);
-
   return (
     <div>
       <div style={{
@@ -394,62 +400,25 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 14, marginBottom: 20,
-      }}>
-        {pieData.length > 0 && (
-          <div className="card" style={{ marginBottom: 0 }}>
-            <div className="card-head">
-              <h3>Disposition Overview</h3>
-              <span className="count">{grandTotal} total</span>
-            </div>
-            <div className="card-pad" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 140, height: 140, flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={32} outerRadius={58} dataKey="value" paddingAngle={2}>
-                      {pieData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} stroke="none" />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v) => [v, 'Donors']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
-                {pieData.map(d => (
-                  <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: 'var(--ink-soft)', flex: 1 }}>{d.name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: d.color }}>{d.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {pieData.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-head">
+            <h3>Disposition Summary</h3>
+            <span className="count">{grandTotal} total across {stationNames.length} stations</span>
           </div>
-        )}
-
-        {barData.length > 0 && (
-          <div className="card" style={{ marginBottom: 0 }}>
-            <div className="card-head">
-              <h3>Station-wise Totals</h3>
-              <span className="count">{barData.length} stations</span>
-            </div>
-            <div className="card-pad" style={{ height: 200, padding: '8px 12px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData.slice(0, 8)} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 0 }}>
-                  <XAxis type="number" tick={{ fontSize: 10 }} hide />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#6b7280' }} width={80} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v) => [v, 'Donors']} cursor={{ fill: '#f3f4f6' }} />
-                  <Bar dataKey="total" fill="#5B6B4E" radius={[0, 3, 3, 0]} barSize={14} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="card-pad" style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            {pieData.map(d => (
+              <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 140 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{d.name}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: d.color }}>{d.value}</div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {stationNames.length > 0 && (
         <div className="card" style={{ marginBottom: 16 }}>
