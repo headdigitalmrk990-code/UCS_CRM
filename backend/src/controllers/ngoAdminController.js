@@ -655,32 +655,45 @@ export const removeStationByName = async (req, res) => {
 
 export const createStationHandler = async (req, res) => {
   try {
-    const { station, ngo_id } = req.body;
+    const { station, ngo_ids } = req.body;
     if (!station) {
       return res.status(400).json({ message: 'station name is required' });
     }
 
     const stationName = station.trim();
+    const records = [];
 
-    // If ngo_id provided, check unique(ngo_id, station) constraint
-    if (ngo_id) {
+    if (ngo_ids && ngo_ids.length > 0) {
+      for (const ngo_id of ngo_ids) {
+        const { data: existing } = await supabase
+          .from('fro_station_assignments')
+          .select('id')
+          .eq('station', stationName)
+          .eq('ngo_id', ngo_id)
+          .maybeSingle();
+        if (existing) continue;
+        records.push({ station: stationName, ngo_id, assigned_by: req.user.id });
+      }
+    } else {
       const { data: existing } = await supabase
         .from('fro_station_assignments')
         .select('id')
         .eq('station', stationName)
-        .eq('ngo_id', ngo_id)
+        .is('ngo_id', null)
         .maybeSingle();
-      if (existing) return res.json(existing);
+      if (!existing) {
+        records.push({ station: stationName, ngo_id: null, assigned_by: req.user.id });
+      }
     }
 
-    const insertData = { station: stationName, assigned_by: req.user.id };
-    if (ngo_id) insertData.ngo_id = ngo_id;
+    if (records.length === 0) {
+      return res.json({ message: 'already exists' });
+    }
 
     const { data, error } = await supabase
       .from('fro_station_assignments')
-      .insert([insertData])
-      .select()
-      .single();
+      .insert(records)
+      .select();
     if (error) throw error;
     return res.json(data);
   } catch (error) {

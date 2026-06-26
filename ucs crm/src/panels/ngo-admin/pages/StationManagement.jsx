@@ -45,16 +45,20 @@ export default function StationManagement() {
   const [froWorkers, setFroWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newStation, setNewStation] = useState('');
-  const [newStationNgo, setNewStationNgo] = useState('');
+  const [newStationNgos, setNewStationNgos] = useState([]);
   const [adding, setAdding] = useState(false);
   const [editNgoStation, setEditNgoStation] = useState(null);
+  const [newNgoModalOpen, setNewNgoModalOpen] = useState(false);
 
   const computeNextName = (existingStations) => {
     const nums = existingStations
-      .map(s => parseInt(s.station?.replace(/^Station\s*/i, ''), 10))
+      .map(s => {
+        const m = s.station?.match(/^new_ucs-(\d+)$/i);
+        return m ? parseInt(m[1], 10) : NaN;
+      })
       .filter(n => !isNaN(n));
     const max = nums.length > 0 ? Math.max(...nums) : 0;
-    return `Station ${max + 1}`;
+    return `new_ucs-${max + 1}`;
   };
 
   const fetchData = () => {
@@ -90,11 +94,12 @@ export default function StationManagement() {
     if (!newStation.trim()) return;
     setAdding(true);
     try {
-      const body = { station: newStation.trim() };
-      if (newStationNgo) body.ngo_id = parseInt(newStationNgo);
-      await apiPost('/ngo-admin/stations', body);
+      await apiPost('/ngo-admin/stations', {
+        station: newStation.trim(),
+        ngo_ids: newStationNgos,
+      });
       setNewStation('');
-      setNewStationNgo('');
+      setNewStationNgos([]);
       fetchData();
     } catch (err) {
       alert(err.message);
@@ -153,11 +158,14 @@ export default function StationManagement() {
               <input value={newStation} onChange={e => setNewStation(e.target.value)} />
             </label>
             <label className="field">
-              NGO
-              <select value={newStationNgo} onChange={e => setNewStationNgo(e.target.value)}>
-                <option value="">— Select NGO —</option>
-                {allNgos.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
-              </select>
+              NGOs
+              <div>
+                <button type="button" className="btn btn-sm btn-outline" onClick={() => setNewNgoModalOpen(true)} style={{ width: '100%', textAlign: 'left' }}>
+                  {newStationNgos.length > 0
+                    ? `${newStationNgos.length} selected`
+                    : 'Select NGOs'}
+                </button>
+              </div>
             </label>
             <button className="btn btn-primary" onClick={handleAddStation} disabled={adding || !newStation.trim()} style={{ alignSelf: 'flex-end' }}>
               {adding ? 'Adding...' : 'Create'}
@@ -234,6 +242,15 @@ export default function StationManagement() {
           selectedIds={stations.find(s => s.station === editNgoStation)?.ngos.map(n => n.ngo_id) || []}
           onSave={(ids) => { handleNgoChange(editNgoStation, ids); setEditNgoStation(null); }}
           onClose={() => setEditNgoStation(null)}
+        />
+      )}
+
+      {newNgoModalOpen && (
+        <NgoSelectModal
+          allNgos={allNgos}
+          selectedIds={newStationNgos}
+          onSave={(ids) => { setNewStationNgos(ids); setNewNgoModalOpen(false); }}
+          onClose={() => setNewNgoModalOpen(false)}
         />
       )}
     </div>
