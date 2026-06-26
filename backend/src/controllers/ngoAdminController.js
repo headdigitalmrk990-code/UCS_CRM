@@ -9,6 +9,9 @@ import {
   findAssignmentsByNgo,
   getStationDispositionStats,
   getDonorsByStationAndStatus,
+  getTransferableCount,
+  createTemporaryTransfer,
+  reverseTransfer,
 } from '../models/froAssignmentModel.js';
 import {
   upsertStationAssignment,
@@ -1269,6 +1272,73 @@ export const acknowledgeAlert = async (req, res) => {
 
     if (error) throw error;
     return res.json({ message: 'Alert acknowledged' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const getTransferableData = async (req, res) => {
+  try {
+    const { station } = req.params;
+    const ngoIds = await getUserNgoIds(req.user);
+    if (ngoIds.length === 0) return res.json({ froWorkers: [] });
+
+    const froWorkers = [];
+    const seen = new Set();
+
+    for (const ngoId of ngoIds) {
+      const workers = await getFroWorkersByNgo(ngoId);
+      for (const w of workers) {
+        if (seen.has(w.id)) continue;
+        seen.add(w.id);
+        const count = await getTransferableCount(station, ngoId, w.id);
+        froWorkers.push({ id: w.id, name: w.name || 'Unknown', total_count: count });
+      }
+    }
+
+    return res.json({ froWorkers });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const transferStationData = async (req, res) => {
+  try {
+    const { station } = req.params;
+    const { source_fro_id, target_fro_id, count } = req.body;
+    if (!source_fro_id || !target_fro_id || !count || count < 1) {
+      return res.status(400).json({ message: 'source_fro_id, target_fro_id, and count > 0 are required' });
+    }
+
+    const ngoIds = await getUserNgoIds(req.user);
+    if (ngoIds.length === 0) return res.status(403).json({ message: 'No NGO access' });
+
+    const ngoId = ngoIds[0];
+    const autoReturnAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+
+    const result = await createTemporaryTransfer(source_fro_id, target_fro_id, ngoId, station.trim(), count, autoReturnAt, req.user.id);
+
+    if (result.transferred === 0) {
+      return res.status(400).json({ message: 'No transferable leads found for this FRO at this station' });
+    }
+
+    return res.json({
+      transfer_id: result.transfer.id,
+      transferred: result.transferred,
+      auto_return_at: autoReturnAt,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const returnTransferEarly = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: 'Transfer ID required' });
+
+    const returned = await reverseTransfer(parseInt(id));
+    return res.json({ message: `${returned} leads returned to original FRO`, returned });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
