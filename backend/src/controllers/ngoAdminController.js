@@ -1338,3 +1338,87 @@ export const resolveDataRequest = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+// ---- Station Transfers ----
+
+export const getTransferableData = async (req, res) => {
+  try {
+    const { station } = req.params;
+    const ngoIds = await getUserNgoIds(req.user);
+    if (ngoIds.length === 0) return res.status(400).json({ message: 'No NGO assigned' });
+
+    const ngoId = ngoIds[0];
+    const { data: stationAssigns } = await supabase
+      .from('fro_station_assignments')
+      .select('fro_worker_id, workers!fro_station_assignments_fro_worker_id_fkey(name)')
+      .eq('station', station.trim())
+      .eq('ngo_id', ngoId)
+      .single();
+
+    if (!stationAssigns || !stationAssigns.fro_worker_id) {
+      return res.json({ fro_worker: null, transferable_count: 0 });
+    }
+
+    const count = await getTransferableCount(station.trim(), ngoId, stationAssigns.fro_worker_id);
+
+    return res.json({
+      fro_worker_id: stationAssigns.fro_worker_id,
+      fro_worker_name: stationAssigns.workers?.name || 'Unknown',
+      transferable_count: count,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const transferStationData = async (req, res) => {
+  try {
+    const { station } = req.params;
+    const { target_fro_worker_id, donor_count } = req.body;
+    const ngoIds = await getUserNgoIds(req.user);
+    if (ngoIds.length === 0) return res.status(400).json({ message: 'No NGO assigned' });
+
+    const ngoId = ngoIds[0];
+    if (!target_fro_worker_id || !donor_count) {
+      return res.status(400).json({ message: 'target_fro_worker_id and donor_count are required' });
+    }
+
+    const { data: sourceAssign } = await supabase
+      .from('fro_station_assignments')
+      .select('fro_worker_id')
+      .eq('station', station.trim())
+      .eq('ngo_id', ngoId)
+      .single();
+
+    if (!sourceAssign || !sourceAssign.fro_worker_id) {
+      return res.status(400).json({ message: 'No FRO assigned to this station' });
+    }
+
+    const autoReturnAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const result = await createTemporaryTransfer(
+      sourceAssign.fro_worker_id, target_fro_worker_id, ngoId,
+      station.trim(), donor_count, autoReturnAt, req.user.id
+    );
+
+    return res.json({
+      message: `Transferred ${result.transferred} donors to new FRO`,
+      transfer: result.transfer,
+      transferred: result.transferred,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const returnTransferEarly = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const count = await reverseTransfer(parseInt(id));
+    return res.json({
+      message: `Returned ${count} donors to original FRO`,
+      returned: count,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
