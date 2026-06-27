@@ -1418,7 +1418,7 @@ export const transferStationData = async (req, res) => {
 export const returnTransferEarly = async (req, res) => {
   try {
     const { id } = req.params;
-    const count = await reverseTransfer(parseInt(id));
+    const count = await reverseTransfer(id);
     return res.json({
       message: `Returned ${count} donors to original FRO`,
       returned: count,
