@@ -285,16 +285,19 @@ export const createTemporaryTransfer = async (sourceFroId, ngoId, sourceStation,
     return { transfer: null, transferred: 0 };
   }
 
+  const donorIds = assignments.map(a => a.donor_id);
   const ids = assignments.map(a => a.id);
   await supabase.from('fro_assignments').update({ status: 'reassigned', updated_at: new Date().toISOString() }).in('id', ids);
 
   const newAssignments = assignments.map(a => ({
     donor_id: a.donor_id, fro_worker_id: null, ngo_id: ngoId,
     station: targetStation, status: a.status, assigned_by: assignedBy,
-    assigned_at: new Date().toISOString(), transfer_id: transfer.id,
+    assigned_at: new Date().toISOString(),
   }));
 
   await supabase.from('fro_assignments').insert(newAssignments);
+
+  await supabase.from('fro_transfers').update({ transferred_donor_ids: donorIds }).eq('id', transfer.id);
 
   return { transfer, transferred: assignments.length };
 };
@@ -303,10 +306,16 @@ export const reverseTransfer = async (transferId) => {
   const { data: transfer } = await supabase.from('fro_transfers').select('*').eq('id', transferId).single();
   if (!transfer || transfer.returned) return 0;
 
+  const donorIds = transfer.transferred_donor_ids || [];
+  if (donorIds.length === 0) {
+    await supabase.from('fro_transfers').update({ returned: true, returned_at: new Date().toISOString() }).eq('id', transferId);
+    return 0;
+  }
+
   const { data: assignments } = await supabase
     .from('fro_assignments')
     .select('id, donor_id, status, station')
-    .eq('transfer_id', transferId)
+    .in('donor_id', donorIds)
     .not('status', 'eq', 'reassigned');
 
   if (!assignments || assignments.length === 0) {
@@ -329,7 +338,7 @@ export const reverseTransfer = async (transferId) => {
   const newAssignments = assignments.map(a => ({
     donor_id: a.donor_id, fro_worker_id: originalFroId, ngo_id: transfer.ngo_id,
     station: transfer.station, status: a.status, assigned_by: transfer.created_by,
-    assigned_at: new Date().toISOString(), transfer_id: transferId,
+    assigned_at: new Date().toISOString(),
   }));
 
   await supabase.from('fro_assignments').insert(newAssignments);
