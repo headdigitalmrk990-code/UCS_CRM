@@ -86,14 +86,23 @@ export default function FROPanel() {
     Promise.all([getScheduled(), getCallbacks()]).then(([scheduled, callbacks]) => {
       const todayStr = new Date().toISOString().slice(0, 10);
       const items = [];
+      const seen = new Set();
+      const k = (d) => `${d.id}-${d.ngo_id || ''}`;
       (scheduled || []).forEach(d => {
-        items.push({ id: d.id, ngo_id: d.ngo_id, donor_name: d.donor_name, donor_mobile: d.donor_mobile, scheduled_at: d.scheduled_at, assignment_id: d.assignment_id, type: 'scheduled' });
+        if (d.scheduled_at && d.scheduled_at.slice(0, 10) !== todayStr && !seen.has(k(d))) {
+          seen.add(k(d));
+          items.push({ id: d.id, ngo_id: d.ngo_id, donor_name: d.donor_name, donor_mobile: d.donor_mobile, scheduled_at: d.scheduled_at, assignment_id: d.assignment_id, type: 'scheduled' });
+        }
       });
       (callbacks || []).forEach(d => {
-        items.push({ id: d.id, ngo_id: d.ngo_id, donor_name: d.donor_name, donor_mobile: d.donor_mobile, scheduled_at: d.scheduled_at || null, assignment_id: d.assignment_id, type: 'callback' });
+        if (!seen.has(k(d))) {
+          seen.add(k(d));
+          items.push({ id: d.id, ngo_id: d.ngo_id, donor_name: d.donor_name, donor_mobile: d.donor_mobile, scheduled_at: d.scheduled_at || null, assignment_id: d.assignment_id, type: 'callback' });
+        }
       });
       (scheduled || []).forEach(d => {
-        if (d.scheduled_at && d.scheduled_at.slice(0, 10) === todayStr) {
+        if (d.scheduled_at && d.scheduled_at.slice(0, 10) === todayStr && !seen.has(k(d))) {
+          seen.add(k(d));
           items.push({ id: d.id, ngo_id: d.ngo_id, donor_name: d.donor_name, donor_mobile: d.donor_mobile, scheduled_at: d.scheduled_at, assignment_id: d.assignment_id, type: 'callback' });
         }
       });

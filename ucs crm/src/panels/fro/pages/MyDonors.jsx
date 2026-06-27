@@ -214,10 +214,13 @@ export default function MyDonors() {
         logData.project_name = projectName || null;
       }
       await addDonorLog(donor.id, logData);
+      setDonors(prev => prev.map(d =>
+        d.id === donor.id && d.ngo_id === donor.ngo_id
+          ? { ...d, status: selected, notes: notes || d.notes }
+          : d
+      ));
       setSelected(null); setNotes(''); setScheduledDate(''); setScheduledTime(''); setCallbackTime(''); setLeadScreenshot(null); setScreenshotPreview(null); setLeadAddress(''); setLeadPan(''); setPanError(''); setLeadDob(''); setProjectName('');
-      const nextDonors = donors.filter(d => d.id !== donor.id || d.ngo_id !== donor.ngo_id);
-      setDonors(nextDonors);
-      if (index >= nextDonors.length && nextDonors.length > 0) setIndex(0);
+      if (index < donors.length - 1) setIndex(i => i + 1);
     } catch (err) {
       setMessage({ type: 'error', text: err.message });
     } finally { setSaving(false); }
@@ -225,7 +228,8 @@ export default function MyDonors() {
 
   const handleButtonClick = () => {
     if (selected) { handleSave(); return; }
-    setMessage({ type: 'error', text: 'Select a disposition' });
+    if (index < donors.length - 1) { setIndex(i => i + 1); return; }
+    setMessage({ type: 'error', text: 'No more donors' });
   };
 
   if (loading) return <SkeletonProfile />;
@@ -536,6 +540,7 @@ export default function MyDonors() {
     </div>
 
     <div className="detail-action-outer">
+      <button className="btn-next" disabled={index === 0} onClick={() => setIndex(i => i - 1)} style={{ background:'transparent', color:'var(--sage)', border:'1px solid var(--line)' }}>← Prev</button>
       <span className="counter">{index + 1} of {donors.length}</span>
       <button className="btn-next"
         disabled={saving}

@@ -852,7 +852,7 @@ export const getFroCallbacks = async (req, res) => {
       .from('fro_assignments')
       .select('*')
       .in('station', stationNames)
-      .in('status', ['follow_up', 'scheduled', 'callback']);
+      .in('status', ['follow_up', 'callback']);
 
     if (error) throw error;
 
