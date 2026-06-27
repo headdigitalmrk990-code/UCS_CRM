@@ -12,6 +12,7 @@ export default function Donors() {
   const [search, setSearch] = useState('');
   const [detail, setDetail] = useState(null);
   const [showDetail, setShowDetail] = useState(null);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     setLoading(true);
@@ -29,10 +30,16 @@ export default function Donors() {
     }
   };
 
-  const filtered = donors.filter(d =>
+  const searchFiltered = donors.filter(d =>
     !search || (d.donor_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (d.donor_mobile || '').includes(search)
   );
+
+  const filtered = searchFiltered.filter(d => {
+    if (filter === 'active') return d.has_donated_current_fy === true;
+    if (filter === 'inactive') return !d.has_donated_current_fy;
+    return true;
+  });
 
   if (loading) return <SkeletonDonors />;
 
@@ -44,6 +51,26 @@ export default function Donors() {
         <span style={{ fontSize:11, color:'var(--ink-soft)', fontWeight:600 }}>{filtered.length} donor{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
+      <div style={{ display:'flex', gap:6, padding:'8px 0', borderBottom:'1px solid var(--line)', flexShrink:0 }}>
+        {[
+          { id: 'all', label: 'All' },
+          { id: 'active', label: 'Active' },
+          { id: 'inactive', label: 'Inactive' },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setFilter(tab.id)}
+            style={{
+              padding:'5px 14px', border:`1px solid ${filter === tab.id ? 'var(--sage)' : 'var(--line)'}`,
+              borderRadius:6, background: filter === tab.id ? 'var(--sage)' : '#fff',
+              color: filter === tab.id ? '#fff' : 'var(--ink)',
+              fontSize:10, fontWeight:700, fontFamily:'inherit', cursor:'pointer', transition:'all .12s',
+            }}>
+            {tab.label}
+          </button>
+        ))}
+        {filter === 'active' && <span style={{ fontSize:10, color:'var(--ink-soft)', alignSelf:'center', marginLeft:4 }}>{donors.filter(d => d.has_donated_current_fy).length} active</span>}
+        {filter === 'inactive' && <span style={{ fontSize:10, color:'var(--ink-soft)', alignSelf:'center', marginLeft:4 }}>{donors.filter(d => !d.has_donated_current_fy).length} inactive</span>}
+      </div>
+
       <div style={{ flex:1, overflowY:'auto' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:40, fontSize:12, color:'var(--ink-soft)' }}>No donors found.</div>
@@ -53,6 +80,7 @@ export default function Donors() {
               <tr style={{ borderBottom:'1px solid var(--line)' }}>
                 <th style={{ textAlign:'left', padding:'8px 10px', fontSize:10, fontWeight:600, textTransform:'uppercase', color:'var(--ink-soft)' }}>Name</th>
                 <th style={{ textAlign:'left', padding:'8px 10px', fontSize:10, fontWeight:600, textTransform:'uppercase', color:'var(--ink-soft)' }}>Status</th>
+                <th style={{ textAlign:'left', padding:'8px 10px', fontSize:10, fontWeight:600, textTransform:'uppercase', color:'var(--ink-soft)' }}>Activity</th>
               </tr>
             </thead>
             <tbody>
@@ -64,6 +92,13 @@ export default function Donors() {
                   <td style={{ padding:'8px 10px', fontWeight:600 }}>{d.donor_name || '—'}</td>
                   <td style={{ padding:'8px 10px' }}>
                     <span className={`pill ${STATUS_PILL[d.status] || 'pill-gray'}`}>{d.status?.replace(/_/g, ' ') || 'unknown'}</span>
+                  </td>
+                  <td style={{ padding:'8px 10px' }}>
+                    {d.has_donated_current_fy ? (
+                      <span className="pill pill-green">Active</span>
+                    ) : (
+                      <span className="pill pill-gray">Inactive</span>
+                    )}
                   </td>
                 </tr>
               ))}

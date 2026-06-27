@@ -263,6 +263,19 @@ export const getMyDonors = async (req, res) => {
       }
     }
 
+    const now = new Date();
+    const fyStart = new Date(now.getFullYear(), now.getMonth() < 3 ? 3 : 3, 1);
+    if (fyStart > now) fyStart.setFullYear(fyStart.getFullYear() - 1);
+
+    const { data: donationLogs } = await supabase
+      .from('fro_donor_logs')
+      .select('donor_id')
+      .in('donor_id', donorIds)
+      .in('action', ['donation'])
+      .gte('created_at', fyStart.toISOString());
+
+    const donatedInFy = new Set((donationLogs || []).map(l => l.donor_id));
+
     const result = [];
     const seen = new Set();
     for (const a of assignments || []) {
@@ -290,6 +303,9 @@ export const getMyDonors = async (req, res) => {
         donor_dob: d.birth_date || '',
         donation_count: d.donation_count || 0,
         total_donated: d.total_amount || 0,
+        last_donation_date: d.last_donation_date || null,
+        first_donation_date: d.first_donation_date || null,
+        has_donated_current_fy: donatedInFy.has(a.donor_id),
         status: a.status || 'pending',
         notes: a.notes || null,
         last_contacted_at: a.last_contacted_at || null,
