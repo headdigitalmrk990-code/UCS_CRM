@@ -318,8 +318,8 @@ export default function StationManagement() {
                     <td>
                       <strong>{s.station}</strong>
                       {(() => {
-                        const at = activeTransfers.find(t => t.station === s.station);
-                        return at ? <span style={{ marginLeft: 6, fontSize: 12, color: '#9ca3af' }}>→ {at.target_station}</span> : null;
+                        const at = activeTransfers.find(t => t.station?.trim() === s.station?.trim());
+                        return at ? <span style={{ marginLeft: 6, fontSize: 13, color: '#b45309', fontWeight: 500 }}>→ {at.target_station}</span> : null;
                       })()}
                     </td>
                     <td>
@@ -350,10 +350,10 @@ export default function StationManagement() {
                         {(() => {
                           const at = activeTransfers.find(t => t.station === s.station);
                           return at ? (
-                            <button className="btn btn-sm btn-outline"
+                            <button className="btn btn-sm"
                               onClick={() => handleReturnEarly(at.id)}
                               disabled={returningId === at.id}
-                              style={{ color: 'var(--sage, #5B6B4E)' }}>
+                              style={{ background: '#fef3c7', border: '1px solid #f59e0b', color: '#92400e' }}>
                               {returningId === at.id ? 'Returning...' : 'Return'}
                             </button>
                           ) : null;
