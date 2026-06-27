@@ -1378,7 +1378,7 @@ export const transferStationData = async (req, res) => {
 
     const autoReturnAt = new Date(Date.now() + 10 * 60 * 60 * 1000).toISOString();
     const result = await createTemporaryTransfer(
-      sourceAssign.fro_worker_id, sourceAssign.ngo_id,
+      sourceAssign.fro_worker_id, ngoIds,
       station.trim(), target_station.trim(), donor_count, autoReturnAt, req.user.id
     );
 

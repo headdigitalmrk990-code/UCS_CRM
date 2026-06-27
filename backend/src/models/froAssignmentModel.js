@@ -247,12 +247,13 @@ export const getStationDispositionStats = async (ngoId) => {
   return stationMap;
 };
 
-export const createTemporaryTransfer = async (sourceFroId, ngoId, sourceStation, targetStation, count, autoReturnAt, assignedBy) => {
+export const createTemporaryTransfer = async (sourceFroId, ngoIds, sourceStation, targetStation, count, autoReturnAt, assignedBy) => {
+  const primaryNgoId = Array.isArray(ngoIds) ? ngoIds[0] : ngoIds;
   const { data: transfer, error: tErr } = await supabase
     .from('fro_transfers')
     .insert([{
       station: sourceStation, source_fro_worker_id: sourceFroId, target_fro_worker_id: null,
-      target_station: targetStation, ngo_id: ngoId, donor_count: count, auto_return_at: autoReturnAt, created_by: assignedBy,
+      target_station: targetStation, ngo_id: primaryNgoId, donor_count: count, auto_return_at: autoReturnAt, created_by: assignedBy,
     }])
     .select()
     .single();
@@ -262,7 +263,7 @@ export const createTemporaryTransfer = async (sourceFroId, ngoId, sourceStation,
     .from('fro_assignments')
     .select('id, donor_id, status, station')
     .eq('station', sourceStation)
-    .eq('ngo_id', ngoId)
+    .in('ngo_id', Array.isArray(ngoIds) ? ngoIds : [ngoIds])
     .not('status', 'eq', 'reassigned')
     .order('assigned_at', { ascending: true })
     .limit(count);
@@ -276,7 +277,7 @@ export const createTemporaryTransfer = async (sourceFroId, ngoId, sourceStation,
   await supabase.from('fro_assignments').update({ status: 'reassigned', updated_at: new Date().toISOString() }).in('id', ids);
 
   const newAssignments = assignments.map(a => ({
-    donor_id: a.donor_id, fro_worker_id: null, ngo_id: ngoId,
+    donor_id: a.donor_id, fro_worker_id: null, ngo_id: primaryNgoId,
     station: targetStation, status: a.status, assigned_by: assignedBy,
     assigned_at: new Date().toISOString(),
   }));
