@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react';
 import { apiGet } from '../api/auth';
 
+function fmtTime(t) {
+  if (!t) return '—';
+  const d = new Date(t);
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+const STATUS_COLORS = {
+  present: '#10b981',
+  late: '#f59e0b',
+  absent: '#ef4444',
+  'half-day': '#8b5cf6',
+  leave: '#3b82f6',
+};
+
 export default function NgoAttendance() {
   const [records, setRecords] = useState([]);
   const [froWorkers, setFroWorkers] = useState([]);
@@ -18,42 +32,15 @@ export default function NgoAttendance() {
   const froIds = new Set(froWorkers.map(w => w.id));
 
   const [year, m] = month.split('-');
-  const monthRecords = records.filter(r => {
+  let filtered = records.filter(r => {
     const d = r.date || '';
     return d.startsWith(`${year}-${m}`) && froIds.has(r.worker_id);
   });
 
-  const grouped = {};
-  monthRecords.forEach(r => {
-    if (!grouped[r.worker_id]) grouped[r.worker_id] = { workerName: r.workers?.name || 'Unknown', days: {} };
-    grouped[r.worker_id].days[r.date] = r;
-  });
-
-  let entries = Object.entries(grouped);
-
   if (search) {
     const s = search.toLowerCase();
-    entries = entries.filter(([, g]) => g.workerName.toLowerCase().includes(s));
+    filtered = filtered.filter(r => (r.workers?.name || '').toLowerCase().includes(s));
   }
-
-  const daysInMonth = new Date(parseInt(year), parseInt(m), 0).getDate();
-  const dayHeaders = Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, '0'));
-
-  const statusColor = (status) => {
-    if (status === 'present') return '#10b981';
-    if (status === 'late') return '#f59e0b';
-    if (status === 'absent') return '#ef4444';
-    if (status === 'half-day') return '#8b5cf6';
-    if (status === 'leave') return '#3b82f6';
-    return '#d1d5db';
-  };
-
-  const countStatus = (days, status) => Object.values(days).filter(d => d.status === status).length;
-
-  const stats = monthRecords.reduce((acc, r) => {
-    acc[r.status] = (acc[r.status] || 0) + 1;
-    return acc;
-  }, {});
 
   return (
     <div>
@@ -66,49 +53,39 @@ export default function NgoAttendance() {
               style={{ fontSize: 13, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line, #e5e7eb)' }} />
             <input placeholder="Search worker…" value={search} onChange={e => setSearch(e.target.value)}
               style={{ fontSize: 13, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line, #e5e7eb)', flex: 1, maxWidth: 240 }} />
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
-            {Object.entries(stats).map(([k, v]) => (
-              <div key={k} style={{ fontSize: 13, color: '#6b7280' }}>
-                <span style={{ color: statusColor(k), fontWeight: 600 }}>{k}</span>: {v}
-              </div>
-            ))}
+            <span style={{ fontSize: 13, color: '#6b7280' }}>{filtered.length} record{filtered.length !== 1 ? 's' : ''}</span>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ fontSize: 12, borderCollapse: 'collapse', width: '100%' }}>
+            <table style={{ fontSize: 13, borderCollapse: 'collapse', width: '100%' }}>
               <thead>
                 <tr>
-                  <th style={{ position: 'sticky', left: 0, background: '#fff', zIndex: 2, minWidth: 140, textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--line, #e5e7eb)' }}>Worker</th>
-                  {dayHeaders.map(d => (
-                    <th key={d} style={{ width: 28, padding: '4px 2px', textAlign: 'center', fontSize: 10, color: '#9ca3af', borderBottom: '1px solid var(--line, #e5e7eb)' }}>{d}</th>
-                  ))}
-                  <th style={{ minWidth: 32, padding: '4px 6px', textAlign: 'center', fontSize: 10, color: '#10b981', borderBottom: '1px solid var(--line, #e5e7eb)' }}>P</th>
-                  <th style={{ minWidth: 32, padding: '4px 6px', textAlign: 'center', fontSize: 10, color: '#f59e0b', borderBottom: '1px solid var(--line, #e5e7eb)' }}>L</th>
-                  <th style={{ minWidth: 32, padding: '4px 6px', textAlign: 'center', fontSize: 10, color: '#ef4444', borderBottom: '1px solid var(--line, #e5e7eb)' }}>A</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--line, #e5e7eb)', whiteSpace: 'nowrap' }}>Date</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--line, #e5e7eb)' }}>Worker</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--line, #e5e7eb)' }}>Punch In</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid var(--line, #e5e7eb)' }}>Punch Out</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', borderBottom: '2px solid var(--line, #e5e7eb)' }}>Status</th>
+                  <th style={{ textAlign: 'right', padding: '8px 10px', borderBottom: '2px solid var(--line, #e5e7eb)' }}>Late (min)</th>
                 </tr>
               </thead>
               <tbody>
-                {entries.map(([wid, g]) => (
-                  <tr key={wid}>
-                    <td style={{ position: 'sticky', left: 0, background: '#fff', zIndex: 1, padding: '6px 8px', borderBottom: '1px solid var(--line, #e5e7eb)', fontWeight: 500 }}>
-                      {g.workerName}
+                {filtered.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--line, #e5e7eb)', whiteSpace: 'nowrap', color: '#6b7280' }}>{r.date}</td>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--line, #e5e7eb)', fontWeight: 500 }}>{r.workers?.name || 'Unknown'}</td>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--line, #e5e7eb)' }}>{fmtTime(r.punch_in_time)}</td>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--line, #e5e7eb)' }}>{fmtTime(r.punch_out_time)}</td>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--line, #e5e7eb)', textAlign: 'center' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                        background: STATUS_COLORS[r.status] ? `${STATUS_COLORS[r.status]}18` : '#f3f4f6',
+                        color: STATUS_COLORS[r.status] || '#6b7280',
+                      }}>{r.status}</span>
                     </td>
-                    {dayHeaders.map(d => {
-                      const dateStr = `${year}-${m}-${d}`;
-                      const rec = g.days[dateStr];
-                      return (
-                        <td key={d} style={{ padding: '4px 2px', textAlign: 'center', fontSize: 11, color: rec ? statusColor(rec.status) : '#e5e7eb', borderBottom: '1px solid var(--line, #e5e7eb)' }}>
-                          {rec ? (rec.status === 'present' ? 'P' : rec.status === 'late' ? 'L' : rec.status === 'absent' ? 'A' : rec.status === 'half-day' ? 'HD' : rec.status === 'leave' ? 'LV' : '?') : '·'}
-                        </td>
-                      );
-                    })}
-                    <td style={{ fontWeight: 600, color: '#10b981', padding: '6px', textAlign: 'center', borderBottom: '1px solid var(--line, #e5e7eb)' }}>{countStatus(g.days, 'present') + countStatus(g.days, 'late')}</td>
-                    <td style={{ fontWeight: 600, color: '#f59e0b', padding: '6px', textAlign: 'center', borderBottom: '1px solid var(--line, #e5e7eb)' }}>{countStatus(g.days, 'late')}</td>
-                    <td style={{ fontWeight: 600, color: '#ef4444', padding: '6px', textAlign: 'center', borderBottom: '1px solid var(--line, #e5e7eb)' }}>{countStatus(g.days, 'absent')}</td>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--line, #e5e7eb)', textAlign: 'right', color: r.late_minutes > 0 ? '#f59e0b' : '#d1d5db' }}>{r.late_minutes || 0}</td>
                   </tr>
                 ))}
-                {entries.length === 0 && (
-                  <tr><td colSpan={daysInMonth + 4} style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>No FRO attendance records for this month</td></tr>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#9ca3af' }}>No attendance records for this month</td></tr>
                 )}
               </tbody>
             </table>
