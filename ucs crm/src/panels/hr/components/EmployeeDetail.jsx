@@ -645,7 +645,7 @@ export default function EmployeeDetail({ worker, onBack, onOffboard }) {
                       <ArrowRight width={14} />
                     </button>
                   </div>
-                  <Dropdown className="filter-select" value={attStatus} onChange={e => setAttStatus(e.target.value)}
+                  <Dropdown className="filter-select" value={attStatus} onChange={val => setAttStatus(val)}
                     options={[{value:'',label:'All'},{value:'present',label:'Present'},{value:'late',label:'Late'},{value:'absent',label:'Absent'},{value:'leave',label:'Leave'}]} />
                 </div>
 
@@ -834,7 +834,7 @@ export default function EmployeeDetail({ worker, onBack, onOffboard }) {
               <div className="card" style={{ marginBottom:16 }}>
                 <div className="card-head">
                   <h3>Salary</h3>
-                  <Dropdown value={effectiveMonthKey} onChange={e => setViewingMonthKey(e.target.value)}
+                  <Dropdown value={effectiveMonthKey} onChange={val => setViewingMonthKey(val)}
                     style={{ fontSize:13, padding:'4px 8px' }}
                     renderValue={opt => opt?.label || ''}
                     options={[
@@ -1469,9 +1469,9 @@ export default function EmployeeDetail({ worker, onBack, onOffboard }) {
                         {salaryNgoCount === 1 ? (
                           <div>
                             <span className="detail-label">NGO</span>
-                            <Dropdown value={salaryNgo1} onChange={e => {
-                              setSalaryNgo1(e.target.value);
-                              setSalaryNgo2(prev => prev === e.target.value ? '' : prev);
+                            <Dropdown value={salaryNgo1} onChange={val => {
+                              setSalaryNgo1(val);
+                              setSalaryNgo2(prev => prev === val ? '' : prev);
                             }}
                               options={[
                                 { value: '', label: 'Select NGO' },
@@ -1483,9 +1483,9 @@ export default function EmployeeDetail({ worker, onBack, onOffboard }) {
                           <>
                             <div>
                               <span className="detail-label">NGO 1</span>
-                              <Dropdown value={salaryNgo1} onChange={e => {
-                                setSalaryNgo1(e.target.value);
-                                setSalaryNgo2(prev => prev === e.target.value ? '' : prev);
+                              <Dropdown value={salaryNgo1} onChange={val => {
+                                setSalaryNgo1(val);
+                                setSalaryNgo2(prev => prev === val ? '' : prev);
                               }}
                                 options={[
                                   { value: '', label: 'Select NGO' },
@@ -1495,9 +1495,9 @@ export default function EmployeeDetail({ worker, onBack, onOffboard }) {
                             </div>
                             <div>
                               <span className="detail-label">NGO 2</span>
-                              <Dropdown value={salaryNgo2} onChange={e => {
-                                setSalaryNgo2(e.target.value);
-                                setSalaryNgo1(prev => prev === e.target.value ? '' : prev);
+                              <Dropdown value={salaryNgo2} onChange={val => {
+                                setSalaryNgo2(val);
+                                setSalaryNgo1(prev => prev === val ? '' : prev);
                               }}
                                 options={[
                                   { value: '', label: 'Select NGO' },
