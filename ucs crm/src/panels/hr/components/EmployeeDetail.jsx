@@ -1013,30 +1013,28 @@ export default function EmployeeDetail({ worker, onBack, onOffboard }) {
                         <Arrow />
                         <Box num={lateDeductionDays > 0 ? '-' + lateDeductionDays : '0'} label={'Late\nDeduction'} color={lateDeductionDays > 0 ? '#e67e22' : '#5B6B4E'} />
                         {joiningDeduction > 0 && <><Arrow /><Box num={'−' + joiningDeduction + 'd'} label={'Join\nDeduction'} color="#8B5CF6" /></>}
-                        {(() => {
-                          const sb = sundayBonus || {};
-                          const bonusAmt = sb.bonusAmount || 0;
-                          const akiAmt = sb.incentiveAKI || 0;
-                          const monthlyAmt = sb.incentiveMonthly || 0;
-                          const baseDue = Math.round(totalDue);
-                          const loanDed = loanDeductionTotal;
-                          const total = baseDue + bonusAmt + akiAmt + monthlyAmt - loanDed;
+{(() => {
+                           const sb = sundayBonus || {};
+                           const bonusAmt = sb.bonusAmount || 0;
+                           const akiAmt = sb.incentiveAKI || 0;
+                           const monthlyAmt = sb.incentiveMonthly || 0;
+                           const baseDue = Math.round(totalDue);
+                           const loanDed = loanDeductionTotal;
+                           const total = baseDue + bonusAmt + akiAmt + monthlyAmt - loanDed;
+                           const isFRO = data.department === 'FRO';
 
-                          return (
-                            <>
-                              <Box num={'₹' + baseDue.toLocaleString('en-IN')} label={'Salary\nDue'} color="#5B6B4E" big />
-                              {loanDed > 0 && <><Arrow /><Box num={'−₹' + loanDed.toLocaleString('en-IN')} label={'Loan/\nAdvance'} color="#e67e22" /></>}
-                              <Arrow />
-                              <Box num={'+₹' + bonusAmt.toLocaleString('en-IN')} label={'Sunday\nBonus'} color={bonusAmt > 0 ? '#f59e0b' : '#ddd'} />
-                              <Arrow />
-                              <Box num={'+₹' + akiAmt.toLocaleString('en-IN')} label={'Incentive\nAKI'} color={akiAmt > 0 ? '#8B5CF6' : '#ddd'} />
-                              <Arrow />
-                              <Box num={'+₹' + monthlyAmt.toLocaleString('en-IN')} label={'Incentive\nMonthly'} color={monthlyAmt > 0 ? '#3B82F6' : '#ddd'} />
-                              <Equals />
-                              <Box num={'₹' + total.toLocaleString('en-IN')} label={'Total\nDue'} color="#16a34a" big />
-                            </>
-                          );
-                        })()}
+                           return (
+                             <>
+                               <Box num={'₹' + baseDue.toLocaleString('en-IN')} label={'Salary\\nDue'} color="#5B6B4E" big />
+                               {loanDed > 0 && <><Arrow /><Box num={'−₹' + loanDed.toLocaleString('en-IN')} label={'Loan/\\nAdvance'} color="#e67e22" /></>}
+                               {isFRO && <><Arrow /><Box num={'+₹' + bonusAmt.toLocaleString('en-IN')} label={'Sunday\\nBonus'} color={bonusAmt > 0 ? '#f59e0b' : '#ddd'} /></>}
+                               {isFRO && <><Arrow /><Box num={'+₹' + akiAmt.toLocaleString('en-IN')} label={'Incentive\\nAKI'} color={akiAmt > 0 ? '#8B5CF6' : '#ddd'} /></>}
+                               {isFRO && <><Arrow /><Box num={'+₹' + monthlyAmt.toLocaleString('en-IN')} label={'Incentive\\nMonthly'} color={monthlyAmt > 0 ? '#3B82F6' : '#ddd'} /></>}
+                               <Equals />
+                               <Box num={'₹' + total.toLocaleString('en-IN')} label={'Total\\nDue'} color="#16a34a" big />
+                             </>
+                           );
+                         })()}
                       </div>
 
                       {/* Sunday bonus explanation */}
