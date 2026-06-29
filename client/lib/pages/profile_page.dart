@@ -25,6 +25,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _worker;
   List<dynamic> _history = [];
   bool _loading = true;
+  List<dynamic> _loans = [];
+  bool _loadingLoans = false;
 
   int _present = 0, _absent = 0, _late = 0, _leave = 0, _lateUsed = 0;
   Map<String, String> _statusByDate = {};
@@ -86,6 +88,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     await _refreshHistoryFromNetwork();
     _fetchCalendar();
+    _fetchLoans();
 
     // Subscribe to realtime updates
     if (_workerId != null && _workerId!.isNotEmpty) {
@@ -98,6 +101,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _onRealtimeChange() {
     _refreshHistoryFromNetwork();
+  }
+
+  Future<void> _fetchLoans() async {
+    setState(() => _loadingLoans = true);
+    try {
+      final loans = await ApiService.getMyLoans();
+      if (mounted) setState(() => _loans = loans);
+    } catch (_) {}
+    if (mounted) setState(() => _loadingLoans = false);
   }
 
   Future<void> _applyCachedHistory(Future<List<dynamic>?> future) async {
@@ -264,6 +276,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: const EdgeInsets.only(bottom: 24),
                 child: _dayDetailCard(colors, scheme, tt),
               ),
+            _loansCard(colors, scheme, tt),
+            const SizedBox(height: 24),
             _accountManagement(colors, scheme, tt),
           ],
         ),
@@ -793,6 +807,110 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _loansCard(AppColors colors, ColorScheme scheme, TextTheme tt) {
+    final active = _loans.where((l) => l['status'] == 'approved' || l['status'] == 'pending').toList();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet, size: 18, color: scheme.primary),
+              const SizedBox(width: 8),
+              Text('Loans & Advances',
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 18, fontWeight: FontWeight.w600, color: scheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_loadingLoans)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+            )
+          else if (active.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text('No active loans or advances', style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
+              ),
+            )
+          else
+            ...active.map((loan) => _loanItem(loan, colors, scheme, tt)),
+        ],
+      ),
+    );
+  }
+
+  Widget _loanItem(dynamic loan, AppColors colors, ColorScheme scheme, TextTheme tt) {
+    final type = loan['type']?.toString() ?? 'advance';
+    final amount = loan['total_amount'] ?? 0;
+    final monthlyDeduction = loan['monthly_deduction'] ?? 0;
+    final remainingAmount = loan['remaining_amount'] ?? amount;
+    final status = loan['status']?.toString() ?? 'pending';
+    final label = type == 'loan' ? 'Loan' : 'Advance';
+    final statusColor = status == 'approved' ? const Color(0xFF1D7A4F) : const Color(0xFFc28228);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(status.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _loanRow('Amount', '₹ $amount', scheme),
+            if (monthlyDeduction > 0) ...[
+              const SizedBox(height: 4),
+              _loanRow('Monthly deduction', '₹ $monthlyDeduction', scheme),
+            ],
+            if (remainingAmount > 0) ...[
+              const SizedBox(height: 4),
+              _loanRow('Remaining', '₹ $remainingAmount', scheme),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _loanRow(String label, String value, ColorScheme scheme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+        Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onSurface)),
+      ],
     );
   }
 

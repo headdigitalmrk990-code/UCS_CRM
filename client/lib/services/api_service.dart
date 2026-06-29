@@ -294,15 +294,26 @@ class ApiService {
     return body;
   }
 
-  static Future<Map<String, dynamic>> applyAdvance(String amount, String reason) async {
+  static Future<Map<String, dynamic>> applyAdvance(String amount, String reason, {String type = 'advance'}) async {
     final res = await _post(
-      Uri.parse('$baseUrl/advances/apply'),
+      Uri.parse(type == 'loan' ? '$baseUrl/loans/apply' : '$baseUrl/advances/apply'),
       headers: await _headers(),
-      body: jsonEncode({'amount': amount, 'reason': reason}),
+      body: jsonEncode({'amount': amount, 'reason': reason, 'type': type}),
     );
     final body = jsonDecode(res.body);
-    if (res.statusCode != 201) throw Exception(body['message'] ?? 'Failed to apply advance');
+    if (res.statusCode != 201) throw Exception(body['message'] ?? 'Failed to apply $type');
     return body;
+  }
+
+  static Future<List<dynamic>> getMyLoans() async {
+    final res = await _get(
+      Uri.parse('$baseUrl/loans/my'),
+      headers: await _headers(),
+    );
+    final body = jsonDecode(res.body);
+    if (res.statusCode != 200) throw Exception(body is Map ? (body['message'] ?? 'Failed to fetch loans') : 'Failed to fetch loans');
+    if (body is List) return body;
+    return body['loans'] ?? [];
   }
 
   static Future<Map<String, dynamic>?> getCachedProfile() async {

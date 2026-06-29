@@ -15,6 +15,7 @@ class _AdvancePageState extends State<AdvancePage> {
   final _reasonCtrl = TextEditingController();
   bool _submitting = false;
   bool _showSuccess = false;
+  String _selectedType = 'advance';
 
   @override
   void dispose() {
@@ -35,7 +36,7 @@ class _AdvancePageState extends State<AdvancePage> {
 
     setState(() => _submitting = true);
     try {
-      await ApiService.applyAdvance(amount, reason);
+      await ApiService.applyAdvance(amount, reason, type: _selectedType);
       setState(() => _showSuccess = true);
     } catch (e) {
       if (mounted) {
@@ -112,7 +113,7 @@ class _AdvancePageState extends State<AdvancePage> {
         const SizedBox(height: 8),
         Text('Request Submitted', style: tt.headlineSmall?.copyWith(color: const Color(0xFF0D5535))),
         const SizedBox(height: 4),
-        Text('Your advance request has been sent for approval.', style: tt.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+        Text('Your ${_selectedType == 'loan' ? 'loan' : 'advance'} request has been sent for approval.', style: tt.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
         const SizedBox(height: 12),
         OutlinedButton(
           onPressed: _resetForm,
@@ -131,6 +132,10 @@ class _AdvancePageState extends State<AdvancePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _label(tt, 'Type', colors),
+        const SizedBox(height: 8),
+        _typeDropdown(scheme, colors),
+        const SizedBox(height: 16),
         _label(tt, 'Request Amount', colors),
         const SizedBox(height: 8),
         _amountField(scheme, colors),
@@ -156,6 +161,33 @@ class _AdvancePageState extends State<AdvancePage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _typeDropdown(ColorScheme scheme, AppColors colors) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFDDDDDD)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedType,
+          isExpanded: true,
+          icon: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
+          style: TextStyle(fontSize: 14, color: scheme.onSurface),
+          items: const [
+            DropdownMenuItem(value: 'advance', child: Text('Advance (repay from salary)')),
+            DropdownMenuItem(value: 'loan', child: Text('Loan (monthly deduction)')),
+          ],
+          onChanged: (v) {
+            if (v != null) setState(() => _selectedType = v);
+          },
+        ),
+      ),
     );
   }
 
@@ -204,8 +236,8 @@ class _AdvancePageState extends State<AdvancePage> {
       child: TextField(
         controller: _reasonCtrl,
         maxLines: 4,
-        decoration: const InputDecoration(
-          hintText: 'Explain why you need an advance',
+        decoration: InputDecoration(
+          hintText: 'Explain why you need ${_selectedType == 'loan' ? 'a loan' : 'an advance'}',
           border: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.zero,

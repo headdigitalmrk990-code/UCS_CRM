@@ -1082,10 +1082,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Apply for Advance', style: GoogleFonts.hankenGrotesk(
+                                  Text('Apply for Advance / Loan', style: GoogleFonts.hankenGrotesk(
                                     fontSize: 16, fontWeight: FontWeight.w600, color: sc.onSurface,
                                   )),
-                                  Text('Request salary advance', style: TextStyle(
+                                  Text('Request salary advance or loan', style: TextStyle(
                                     fontSize: 12, fontWeight: FontWeight.w500,
                                     color: sc.onSurfaceVariant,
                                   )),
