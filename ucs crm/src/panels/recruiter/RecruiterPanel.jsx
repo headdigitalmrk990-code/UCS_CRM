@@ -89,7 +89,7 @@ function AppShell() {
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">T</div>
-          <div><h1>TalentForge</h1><span>Recruiter Studio</span></div>
+          <div><h1>HFS</h1><span>Recruiter</span></div>
         </div>
         <nav className="nav">
           <div className="nav-label">Hire</div>

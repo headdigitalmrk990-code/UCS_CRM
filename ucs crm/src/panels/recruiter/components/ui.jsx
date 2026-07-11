@@ -71,7 +71,7 @@ export function Who({ name, role }) {
 
 export function Score({ value }) {
   const cls = value >= 85 ? 'score-hi' : value >= 75 ? 'score-mid' : 'score-lo'
-  return <span className={`score ${cls}`}>\u2605 {value}</span>
+  return <span className={`score ${cls}`}>{value}</span>
 }
 
 const PILL = { Open:['pill-green','#5B6B4E'], Paused:['pill-gold','#C08A2E'], Closed:['pill-gray','#888'] }

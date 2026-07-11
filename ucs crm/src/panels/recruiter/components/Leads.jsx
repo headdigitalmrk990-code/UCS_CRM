@@ -65,6 +65,8 @@ export default function Leads() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleteMsg, setDeleteMsg] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [leadPage, setLeadPage] = useState(1);
+  const PER_PAGE = 10;
 
   const handleDelete = async (id) => {
     setDeleting(true);
@@ -113,6 +115,7 @@ export default function Leads() {
   };
 
   const handleSearch = () => {
+    setLeadPage(1);
     setLeadFilters(p => ({ ...p, search: searchInput }));
   };
 
@@ -134,6 +137,9 @@ export default function Leads() {
 
   const scheduledLeads = leads.filter(l => l.status === 'scheduled');
   const selectedLead = selectedLeadId ? leads.find(l => l.id === selectedLeadId) : null;
+
+  const totalLeadPages = Math.max(1, Math.ceil(filteredLeads.length / PER_PAGE));
+  const paginatedLeads = filteredLeads.slice((leadPage - 1) * PER_PAGE, leadPage * PER_PAGE);
 
 
   if (selectedLead) {
@@ -298,9 +304,9 @@ export default function Leads() {
                   placeholder="Search by name or phone…" />
                 <button className="btn btn-sm" onClick={handleSearch}><Search width={14}/></button>
               </div>
-              <Dropdown className="filter-select" value={leadFilters.status} onChange={e=>setLeadFilters(p=>({...p,status:e.target.value}))}
+              <Dropdown className="filter-select" value={leadFilters.status} onChange={e=>{setLeadPage(1);setLeadFilters(p=>({...p,status:e.target.value}))}}
                 options={[{value:'',label:'All statuses'}, ...LEAD_STATUSES]} />
-              <Dropdown className="filter-select" value={leadFilters.source} onChange={e=>setLeadFilters(p=>({...p,source:e.target.value}))}
+              <Dropdown className="filter-select" value={leadFilters.source} onChange={e=>{setLeadPage(1);setLeadFilters(p=>({...p,source:e.target.value}))}}
                 options={[{value:'',label:'All sources'}, ...LEAD_SOURCES]} />
             </div>
           </div>
@@ -309,6 +315,7 @@ export default function Leads() {
           ) : filteredLeads.length === 0 ? (
             <div className="empty">No leads found.</div>
           ) : (
+            <>
             <div style={{overflowX:'auto'}}>
             <table>
               <thead>
@@ -317,7 +324,7 @@ export default function Leads() {
                 </tr>
               </thead>
               <tbody>
-                {filteredLeads.map(l => {
+                {paginatedLeads.map(l => {
                   const isOwner = myId && l.created_by === myId;
                   let parsed = [];
                   try { parsed = JSON.parse(l.notes || '[]'); } catch {}
@@ -340,6 +347,16 @@ export default function Leads() {
               </tbody>
             </table>
             </div>
+            {totalLeadPages > 1 && (
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4,padding:'10px 12px',borderTop:'1px solid var(--line)'}}>
+                <button disabled={leadPage===1} onClick={()=>setLeadPage(p=>p-1)} className="btn btn-sm" style={{opacity:leadPage===1?0.4:1}}>Prev</button>
+                {Array.from({length:totalLeadPages},(_,i)=>i+1).map(pg => (
+                  <button key={pg} onClick={()=>setLeadPage(pg)} className="btn btn-sm" style={{background:pg===leadPage?'var(--sage)':'transparent',color:pg===leadPage?'#fff':'var(--ink)',fontWeight:pg===leadPage?600:400}}>{pg}</button>
+                ))}
+                <button disabled={leadPage===totalLeadPages} onClick={()=>setLeadPage(p=>p+1)} className="btn btn-sm" style={{opacity:leadPage===totalLeadPages?0.4:1}}>Next</button>
+              </div>
+            )}
+            </>
           )}
         </div>
       )}
